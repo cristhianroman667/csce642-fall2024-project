@@ -177,6 +177,13 @@ class Design:
 
     self.btree = BTree(self.blocks.num_blocks)
     self.btree.build_tree(self.block_list)
+    self.btree.update_store(self.btree.root) # this two go together
+    self.pack()  # this two go together
+
+
+  def swap_blocks(self, n1, n2):
+    self.btree.swap_nodes(n1, n2)
+    self.btree.update_store(self.btree.root)
     self.pack()
 
 
