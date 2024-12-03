@@ -1,5 +1,6 @@
 from .metrics import hpwl_net
 from .btree import BTree
+import copy
 
 class Pin:
   """
@@ -145,9 +146,9 @@ class Design:
 
   def __init__(self, bench_name):
     self.bench_name = bench_name
-    self.blocks_path = self.bench_name + "_block.csv"
-    self.nets_path = self.bench_name + "_nets.csv"
-    self.terminals_path = self.bench_name + "_terminal.csv"
+    self.blocks_path = "benchmark/parsed/" + self.bench_name + "_block.csv"
+    self.nets_path = "benchmark/parsed/" + self.bench_name + "_nets.csv"
+    self.terminals_path = "benchmark/parsed/" + self.bench_name + "_terminal.csv"
 
     self.pins = None
     self.nets = None
@@ -163,8 +164,12 @@ class Design:
     self._curArea = None
 
 
+  def get_features(self):
+    return self.btree.extract_features()
+
+
   def parse(self):
-    print("Start parsing " + self.bench_name + "...")
+    # print("Start parsing " + self.bench_name + "...")
     self.blocks = Blocks(int(self.bench_name[1:]))
     self.parse_blocks(self.blocks_path)
     self.block_list = list(self.blocks.blocks_dict.keys())
@@ -181,10 +186,22 @@ class Design:
     self.pack()  # this two go together
 
 
-  def swap_blocks(self, n1, n2):
-    self.btree.swap_nodes(n1, n2)
+  def rotate_block(self, nn):
+    block = self.blocks[nn]
+    block.rotated = not block.rotated
     self.btree.update_store(self.btree.root)
     self.pack()
+
+
+  def swap_blocks(self, n1, n2):
+    tree = copy.deepcopy(self.btree)
+    try:
+      self.btree.swap_nodes(n1, n2)
+      self.pack()
+    except:
+      # print("reversing swap")
+      self.btree = tree
+
 
 
   def unpack(self):
@@ -217,6 +234,8 @@ class Design:
 
 
   def place_block(self, node):
+    if node.name is None:
+      return
     block = self.blocks[node.name]
 
     if node.parent is None:
@@ -235,6 +254,9 @@ class Design:
       pb = self.blocks[node.parent]
       block.x = pb.x
       block.y = self.update_contour(node, node.parent, False)
+
+
+    # print(block.name, block.x, block.y)
 
 
   def update_contour(self, node, parent, is_left):
@@ -300,7 +322,7 @@ class Design:
 
 
   def parse_nets(self, path):
-    print("Parsing net file")
+    # print("Parsing net file")
     f = open(path, "r+")
     f.readline()
     tmp = ""
@@ -325,7 +347,7 @@ class Design:
 
 
   def parse_pins(self, path):
-    print("Parsing terminal file")
+    # print("Parsing terminal file")
     f = open(path, "r+")
     f.readline()
     for line in f:
@@ -346,7 +368,7 @@ class Design:
 
 
   def parse_blocks(self, path):
-    print("Parsing block file")
+    # print("Parsing block file")
     f = open(path, "r+")
     f.readline()
     for line in f:
